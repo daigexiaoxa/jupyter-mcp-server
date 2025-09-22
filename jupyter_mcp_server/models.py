@@ -21,7 +21,7 @@ class CellInfo(BaseModel):
 
     index: int
     type: Literal["unknown", "code", "markdown"]
-    source: list[str]
+    source: str
     outputs: Optional[list[str]]
 
     @classmethod
@@ -35,6 +35,20 @@ class CellInfo(BaseModel):
                 outputs = safe_extract_outputs(outputs)
             except Exception as e:
                 outputs = [f"[Error reading outputs: {str(e)}]"]
+        
+        # Handle CRDT format where source might be an array of characters
+        raw_source = cell.get("source", "")
+        if isinstance(raw_source, list):
+            # If it's a list, join the elements
+            # This handles both CRDT character arrays and normal line arrays
+            source = "".join(raw_source)
+        else:
+            # If it's already a string, use it directly
+            source = str(raw_source)
+        
         return cls(
-            index=cell_index, type=type, source=cell.get("source", ""), outputs=outputs
+            index=cell_index, 
+            type=type, 
+            source=source, 
+            outputs=outputs
         )
